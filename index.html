@@ -34,7 +34,8 @@
                     </div>
                     
                     <div class="form-group ml-1">
-                        <button class="btn btn-lg btn-rounded btn-success" v-on:click.prevent="saveContact(contact)">Criar Contato</button>
+                        <button v-if="!isEdit" class="btn btn-lg btn-rounded btn-success" v-on:click.prevent="saveContact(contact)">Criar Contato</button>
+                        <button v-if="isEdit" class="btn btn-lg btn-rounded btn-primary" v-on:click.prevent="udateContact(contact)">Atualizar Contato</button>
                     </div>
                 </form>
             </div>
@@ -43,16 +44,17 @@
                 
                 <div class="contact">
                     
-                    <div class="col-12 mb-2">
+                    <div class="col-12 mb-2" v-for="contact in contacts">
                         
                         <div class="card">
                             <div class="card-body">
-                                <h5 class="card-title">Fulano de Tal</h5>
+                                <h5 class="card-title"> {{ contact.name }} </h5>
                                 
-                                <p class="card-text">fulano@email.com, 9888434343</p>
+                                <p class="card-text">Email: {{contact.email}} </p>
+                                <p class="card-text">Fone: {{contact.phone}} </p>
                                 
-                                <a href="#" class="btn btn-sm btn-primary">EDITAR</a>
-                                <a href="#" class="btn btn-sm btn-danger">DELETAR</a>
+                                <a href="#" class="btn btn-sm btn-primary" @click.prevent="editeContact(contact)">EDITAR</a>
+                                <a href="#" class="btn btn-sm btn-danger"  @click.prevent="removeContact(contact.id)">DELETAR</a>
                             </div>
                             
                         </div>
@@ -66,16 +68,23 @@
         let app= new Vue ({
             el:"#app",
             data: {
+                contacts: [],
                 name: 'Contatos App',
                 contact: {
+                    id: '',
                     name: '',
                     email: '',
                     phone: ''
-                }
+                },
+                isEdit: false
+            },
+            created() {
+                this.contacts = JSON.parse(localStorage.getItem('contactsApp'));
             },
             methods: {
                 saveContact(contact) {
                     let contacts = localStorage.getItem('contactsApp');
+                    contact.id = new Date().getTime();
                     //A chave que vai conter os contact é contactsApp
                     if(contacts) {
                         contacts = JSON.parse(contacts);
@@ -87,9 +96,42 @@
                         contacts = [contact];
                         //caso não tenha vai criar esta chave contatos
                     }
+                    this.contacts = contacts;
                     //o atualizar local storage idependente de novo contato ou nova adição.
                     localStorage.setItem('contactsApp', JSON.stringify(contacts));
                     //A informação passada no else é salva no array contacts e é salva na chave'contacs'
+                    //JSON.stringify converte valores em javascript para uma String  JSON.
+                    location.reload();
+                },
+                removeContact(contactId) {
+                    let contacts = localStorage.getItem('contactsApp'); //pega os contatos do localStorage
+
+                    if(!contacts) return; //Se não ouver contato retorna não tem porque executar
+
+                    contacts = JSON.parse(contacts); //Tendo contato eu passo de json para array com os objetos
+
+                   contacts = contacts.filter((contact) => { //Vai filtrar passando todos os contatos menos o informado assim é atualizado sem o contato que selecionou para deletar
+                        return contact.id != contactId;
+                    });
+                    this.contacts = contacts; // Atualizo o array contacts com esse novo array que esta sem o contato informado.
+                    localStorage.setItem('contactsApp', JSON.stringify(contacts));
+                },
+                editeContact(contact) {
+                    this.contact = contact;
+                    this.isEdit = true;
+                },
+                udateContact(contact) {
+                    let contacts = this.contacts.map(contactMap => {
+                        if(contactMap.id == contact.id) {
+                            return contact;
+                        }
+                            return contactMap;
+                    });
+                    this.contacts = contacts;
+                    this.isEdit = false;
+                    localStorage.setItem('contactsApp', JSON.stringify(contacts));
+
+                    location.reload();
                 }
             }
         });
